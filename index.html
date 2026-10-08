@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduHelper</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --success: #22c55e;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-weight: bold;
+      font-size: 1.25rem;
+      color: var(--primary);
+    }
+
+    nav button {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-left: 1rem;
+      color: var(--text-light);
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      transition: all 0.2s;
+    }
+
+    nav button.active, nav button:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    main {
+      flex: 1;
+      max-width: 800px;
+      width: 100%;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      box-sizing: border-box;
+    }
+
+    .page {
+      display: none;
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .progress-container {
+      background: var(--border);
+      border-radius: 9999px;
+      height: 0.75rem;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    .progress-bar {
+      background: var(--success);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .task-input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      font-size: 1rem;
+    }
+
+    button.primary-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    button.primary-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .task.done span {
+      text-decoration: line-through;
+      color: var(--text-light);
+    }
+
+    .task-meta {
+      margin-left: auto;
+      font-size: 0.875rem;
+      color: var(--text-light);
+      background: var(--bg);
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #1e293b;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.375rem;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+    }
+
+    #toast.show {
+      opacity: 1;
+    }
+
+    .ai-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .ai-answer {
+      background: var(--bg);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      border-left: 4px solid var(--primary);
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">EduHelper</div>
+    <nav>
+      <button data-page="home" class="active">Asosiy</button>
+      <button data-page="tasks">Vazifalar</button>
+      <button data-page="ai">AI Maslahatchi</button>
+      <button data-page="about">Loyiha haqida</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Home Page -->
+    <section id="home" class="page active">
+      <h2>Xush kelibsiz!</h2>
+      <p id="homeMessage">Bugungi vazifalarni bajarishni davom ettiring.</p>
+      <p>Jami vazifalar: <span id="homeTasks">0</span> | Bajarildi: <span id="homeDone">0</span></p>
+      <div class="progress-container">
+        <div id="homeBar" class="progress-bar"></div>
+      </div>
+      <p id="homeProgress">0%</p>
+      <p id="taskStatus" style="font-weight: 500;"></p>
+      <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+        <button id="startBtn" class="primary-btn">Demo boshlash</button>
+        <button id="ideaBtn" class="primary-btn" style="background: var(--text-light);">Maqsadimiz</button>
+      </div>
+    </section>
+
+    <!-- Tasks Page -->
+    <section id="tasks" class="page">
+      <h2>Vazifalar ro‘yxati</h2>
+      <div class="task-input-group">
+        <input type="text" id="taskInput" placeholder="Yangi vazifa kiriting...">
+        <button id="addTask" class="primary-btn">Qo‘shish</button>
+      </div>
+      <div id="taskList"></div>
+    </section>
+
+    <!-- AI Page -->
+    <section id="ai" class="page">
+      <h2>Sun'iy intellekt maslahatchisi</h2>
+      <div class="ai-buttons">
+        <button class="primary-btn" data-ai="first">Birinchi nima qilay?</button>
+        <button class="primary-btn" data-ai="time">Vaqtni taqsimlash</button>
+        <button class="primary-btn" data-ai="motivation">Motivatsiya</button>
+        <button class="primary-btn" data-ai="python">Python o'rganish</button>
+        <button id="pitchBtn" class="primary-btn" style="background: var(--success);">Taqdimot matni</button>
+      </div>
+      <div id="aiAnswer" class="ai-answer">Maslahat olish uchun yuqoridagi tugmalardan birini bosing.</div>
+    </section>
+
+    <!-- About Page -->
+    <section id="about" class="page">
+      <h2>Loyiha haqida</h2>
+      <p>EduHelper — o‘quvchilarga dars, vazifa va vaqtini bitta platformada samarali boshqarishga yordam beruvchi loyiha.</p>
+    </section>
+  </main>
+
+  <div id="toast">Xabar</div>
+
+  <script>
+    const tasks = [
+      { text: "Matematika darsini tayyorlash", done: false, meta: "Uyga vazifa" },
+      { text: "Python asoslarini takrorlash", done: true, meta: "Dasturlash" }
+    ];
+
+    const pages = document.querySelectorAll(".page");
+    const navButtons = document.querySelectorAll("nav button");
+
+    function showToast(text){
+      toast.textContent = text;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function openPage(id){
+      pages.forEach(p => p.classList.toggle("active", p.id === id));
+      navButtons.forEach(b => b.classList.toggle("active", b.dataset.page === id));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    navButtons.forEach(b => b.addEventListener("click", () => openPage(b.dataset.page)));
+
+    function update(){
+      const done = tasks.filter(t => t.done).length;
+      const total = tasks.length;
+      const percent = total ? Math.round(done / total * 100) : 0;
+      
+      document.getElementById("homeTasks").textContent = total;
+      document.getElementById("homeDone").textContent = done;
+      document.getElementById("homeProgress").textContent = percent + "%";
+      document.getElementById("homeBar").style.width = percent + "%";
+      
+      document.getElementById("taskStatus").textContent =
+        total === 0 ? "Hozircha vazifa yo‘q." :
+        done === total ? "🎉 Ajoyib! Barcha vazifalar bajarildi!" :
+        done + " ta vazifa bajarildi. Yana " + (total - done) + " ta qoldi.";
+        
+      document.getElementById("homeMessage").textContent =
+        done === total && total > 0 ? "🏆 Bugungi reja bajarildi!" :
+        "Bugungi vazifalarni bajarishni davom ettiring.";
+
+      renderTasks();
+    }
+
+    function renderTasks(){
+      const list = document.getElementById("taskList");
+      list.innerHTML = "";
+      tasks.forEach((task, index) => {
+        const row = document.createElement("div");
+        row.className = "task" + (task.done ? " done" : "");
+        
+        row.innerHTML = `
+          <input type="checkbox" ${task.done ? "checked" : ""} aria-label="Vazifani bajarildi deb belgilash">
+          <span>${escapeHtml(task.text)}</span>
+          <span class="task-meta">${escapeHtml(task.meta)}</span>
+        `;
+        
+        row.querySelector("input").addEventListener("change", e => {
+          tasks[index].done = e.target.checked;
+          update();
+        });
+        list.appendChild(row);
+      });
+    }
+
+    function escapeHtml(s){
+      return s.replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[c]));
+    }
+
+    document.getElementById("addTask").addEventListener("click", () => {
+      const input = document.getElementById("taskInput");
+      const text = input.value.trim();
+      if(!text){ showToast("⚠️ Avval vazifa nomini yozing."); return; }
+      tasks.push({ text, done: false, meta: "Yangi" });
+      input.value = "";
+      update();
+      showToast("✅ Yangi vazifa qo‘shildi!");
+    });
+
+    document.getElementById("taskInput").addEventListener("keydown", e => {
+      if(e.key === "Enter") document.getElementById("addTask").click();
+    });
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      openPage("tasks");
+      showToast("🚀 Interaktiv demo boshlandi!");
+    });
+
+    document.getElementById("ideaBtn").addEventListener("click", () => openPage("about"));
+
+    const answers = {
+      first: "🤖 Avval muddatiga eng yaqin vazifani bajaring. Keyin qolganlarini muhimligiga qarab tartiblang.",
+      time: "🤖 25 daqiqa diqqat bilan o‘qing, 5 daqiqa tanaffus qiling. Keyin keyingi vazifaga o‘ting.",
+      motivation: "🤖 🔥 Har bir tugallangan vazifa — maqsadingizga yana bir qadam. To‘xtamang!",
+      python: "🤖 🐍 Avval Python asoslari, keyin list/dict, funksiyalar, OOP va undan so‘ng Django o‘rganing."
+    };
+
+    document.querySelectorAll("[data-ai]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.getElementById("aiAnswer").textContent = answers[btn.dataset.ai];
+      });
+    });
+
+    document.getElementById("pitchBtn").addEventListener("click", () => {
+      document.getElementById("aiAnswer").textContent =
+        "🎤 Taqdimot: “Assalomu alaykum. Mening loyiham EduHelper deb nomlanadi. U o‘quvchilarga dars, vazifa, baho va vaqtini bitta platformada boshqarishga yordam beradi. Loyihaning asosiy yangiligi — AI tavsiyasi va progress nazoratini birlashtirish. Maqsadimiz — o‘quvchilarning vaqtini tejash va o‘qishni samaraliroq qilish.”";
+      openPage("ai");
+      showToast("🎤 Taqdimot matni tayyor!");
+    });
+
+    update();
+  </script>
+</body>
+</html>
